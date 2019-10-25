@@ -1,0 +1,293 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{comment}
+\usepackage[footnotes,definitionLists,hashEnumerators,smartEllipses,hybrid]{markdown}
+
+\title{Softcite-dataset: A dataset of software mentions in scientific publications}
+\author{James, Patrice, Caifan, and Hannah}
+\date{August 2019}
+
+\begin{document}
+
+\maketitle   
+
+\section{Outline}
+
+Decisions to make:
+
+Capitalize softcite dataset?  Probably yes: Softcite Dataset
+Title.
+Venue. JASIST? PNAS?
+
+\begin{markdown}
+# Motivation
+
+Make software contributions more visible.
+
+# Summary of existing resources
+
+Cite new review paper.
+
+# Description of the dataset
+
+#. XML form
+#. CSV form
+#. RDF form
+
+% links between the three above? (conversion/provenance/post-processing?/a lookup table?)
+
+# Creation of the dataset
+## Coding apparatus
+    - Why? Complexity in creation of coding units same time as coding of those units
+    - Intention was to link to references.
+
+## Coding effort
+    - How many students over how long?
+    % ~2 year?
+    - Third round whitelist coding over snippets (Patrice's consistency script including missed ones, excluding incorrectly coded ones.) (Possibly include that in Data Cleaning section).
+    
+## Coding tooling
+    - What did we use, what did we learn in using it?
+    - What options exist for better tooling (e.g., TagWorks and why).
+    
+## Agreement statistics
+    - First round
+    - Second round
+
+## Data Cleaning
+    - Reflect on what sort of disagreement should be eliminated.
+    - List of remaining consistency issues (Github #638).
+    
+## PDF conversions with GROBID (Patrice mainly, 2-3 pages)
+    - PDF conversions
+    - Alignment of content analysis coding with GROBID XML
+
+# Summary of direct findings
+    - Counts of software mentions, league tables
+    - Distribution of Software mentions
+        - per page, per article etc.
+        - How many paragraphs 
+    - Window analysis
+        - How much could we cut down the content analysis work?
+        - How well should whitelists work?
+
+# How we'd do things differently in the future.
+- selection from a PDF is a pile of junk.
+- annotators did not always re-select from the full_quote for the detail elements (e.g., software_name) complicating alignment.
+- annotator fatigue management was problematic. In particular articles with no mentions were demotivating. In addition articles with many repeated mentions were also demotivating, as annotators assessed progress via the number of articles processed, not by the number of mentions (and their various contexts) discovered. The laboriousness of the annotation apparatus also contributed (editing text files with obscure syntax not being a particularly enjoyable experience, even with syntax highlighting and template help).
+- GROBID conversion first, to simplify alignment. Avoiding all copy and pasting issues.
+
+
+# Future work
+- Use in neural network machine learning (refer to companion paper).
+- Continued addition through Crowdsourcing
+- Use in CiteAs tool
+    
+\end{markdown}
+
+
+\section{The Full Text}
+
+\subsection{Motivation}
+
+Make software contributions more visible.
+
+\subsection{Summary of existing resources}
+
+Cite new review paper.
+
+\subsection{Description of the dataset}
+% alternatively: distinguish the dataset and provenance
+% then describe the process (breakdown of each step) while clarifying the terminologies (annotations/tags/labels, etc.)
+
+The softcite dataset consists of annotations within plain text paragraphs from open access academic papers. The types of annotations are: 1) software name, and their ancillary information: version, creator, url for the software; 2) other document elements including figure, table, and in-text citation call-out.
+% Patrice suggested to change the creator to publisher, is this gonna happen in the published dataset?
+% Why is the software_was_used not included in the TEI XML?
+
+The dataset is published as a single TEI XML file containing a TEI corpus and inline annotations (cite TEI document definition?XXXX). Each annotation has an identifier associated with it, allowing tracing provenance of the annotation. Provenance information includes the original annotation (datetime, annotator, and certainty), as well as any subsequent modifications during alignment and consistency checking.
+
+The TEI XML format is, we hope, formatted for easiest use by NLP and machine learning toolchains. An abbreviated form is below:
+% [insert an example excerpt here?]
+% According to Patrice it seems the most acknowledged format in entity recognition dataset publication -> maybe need some info about this
+
+\subsection{Creation of the dataset}
+
+Process diagram: https://www.draw.io/#G16HjLTR3J9zFyExflyzjVE8U_5NPTqHrd
+
+The Figure above shows the overall process through which this dataset was created.  First we obtained PDF files of academic articles. Then we undertook manual annotation using those PDFs, resulting in text copied from the PDF annotated with our annotation scheme. For eventual computational use, however, we require the plain text of the articles. Accordingly we converted the PDFs to usable text using the GROBID system. That results in well structured TEI XML files which contain both the plain paragraph text and metadata (title, authors, DOI) as well as tags for in-text citations, figures, and tables. We then undertook iterative refinement of the dataset, cycling through annotation-text alignment, machine learning training and evaluation by precision and recall to identify consistency issues, make consistency decisions, and the manual edits to the dataset those decisions imply. After multiple iterations for refinement, the result is published as a single TEI XML corpus file, containing full text paragraphs with annotations from many articles and article metadata. The TEI XML dataset presents annotations without provenance, but each annotation has an identifier that can be used to trace back to its origin in the manual annotation and consistency process. This presents a relatively simple, and we hope usable, dataset format while allowing those interested to investigate further.
+
+\subsubsection{PDF collection}
+
+We selected open access articles from three fields: biomedicine (from PMC), Economics, and Astronomy. We choose these fields for a diversity of publication types, based on patterns observed in previous research \cite{howison_software_2016}. The PMC Open Access collection was also chosen because, in addition to PDFs there is an XML version of the files, which made alignment more convenient initially (prior to using GROBID, discussed below). We downloaded the PMC collection via the FTP interface (https://www.ncbi.nlm.nih.gov/pmc/tools/ftp/) and Economics and Astronomy articles were downloaded through the Unpaywall Open Access service. In total we downloaded XXXX PDFs.
+
+\subsubsection{Manual Annotation}
+
+The articles were annotated by a research team made up of a faculty member, two PhD students, and a team of masters and undergraduate research assistants, peaking at 24 annotators. Each annotator was limited to 10 hours a week work (to avoid fatigue and keep balance across annotators).   Annotation effort totaled XXXX and extended over a two year period.
+% # of the annotations?
+
+\subsubsubsection{Coding apparatus}
+
+Annotators logged into a server and ran a script to have a PDF assigned to them. The script also generated an RDF file in turtle format, which the annotators opened in the Atom text editor. We provided "snippets" in the editor (short key codes) which inserted templates for each annotation; annotators then filled out the templates. Annotators checked these files into github via pull requests, which allowed an opportunity for review (including continuous integration via Travis CI checking syntax and identifiers for annotations).  We chose this rather idiosyncratic annotation environment for four reasons: 1) we did not have useful conversions of the PDFs to plain text when we began, thus choosing to work with the PDF originals rather than problematic text conversions (e.g., pdf2text tools). 2) group annotation requires a collection mechanism, and we preferred to teach the annotators github based collaboration rather than creating a web-based collaborative tool which would have had to be created and maintained by students likely to graduate during the project. 3) we intended to link annotations of full text and annotations in reference lists, not easy within content analysis software such as ATLAS.ti, 4) we wanted to record metadata about annotation, including annotator, time, and certainty (which the RDF approach allowed us to do), and 5) we wanted the infrastructure to be under our control, rather than relying on a vendor. Towards the end of this paper we reflect on these decisions and discuss trade offs with more recently available annotation tool chains.
+
+\subsubsubsection{Annotation process}
+
+Annotators obtained the PDF file via a link to a private github repository. First they assessed whether the PDF was appropriate for annotation, assessing whether this was a regular academic article or letter to the editor, primarily by observing if it had a reference list. Examples of non-annotated documents include indexes, advertisements XXXX (these were much more common in the Unpaywall obtained collections rather than PMC).
+
+Annotators read the PDFs and when they encountered a possible software mention, they selected and copied the contextual text into the annotation template in the RDF file, creating a field called \texttt{full\_quote} together with the corresponding page number within the PDF and whether it extended across a PDF page boundary. From inside this \texttt{full\_quote} they then assessed whether the entity was likely to be a piece of software using a web search and understanding the context throughout the PDF. Annotators then indicated their certainty about whether this was a piece of software (numerical 1-10 score). If they thought it was not a piece of software, they indicated their judgment of the entity in a free-text field. Examples of entities annotated as non-software included: datasets/data in databases, reagents, genes, statistical techniques (rather than implementations), hardware/instruments XXXX. We did not attempt to train consistency on these non-software entities reasoning that our overall goal was software mention detection and achieving agreement on that was already sufficiently time-consuming. 
+
+Once a mention was identified as likely to be software, annotators then made detailed annotations of  \texttt{software\_name}, \texttt{version\_number}, \texttt{version\_date}, \texttt{url}, \texttt{creator}, and whether the software was used by the authors or not (examples of unused software include software mentioned in comparison or analogy). The full annotation scheme, with examples, is shown in XXXX.
+
+Annotators also annotated associated references, both the in-text citation and the reference list entry.  Thus the \texttt{creator} of a piece of software could be mentioned in the text or in a reference list, as could a \texttt{url}. Annotators also indicated what type of reference it was, choosing between \texttt{user\_guide}, \texttt{publication}, \texttt{project\_page}, and \texttt{project\_name}. As discussed below this annotation was problematic and is not included in the TEI XML dataset (although it is included in the provenance data).
+
+\subsubsubsection{Annotator training}
+
+The annotation scheme was adapted from \cite{howison_software_2016}. Initially the PI trained a doctoral student who then developed training materials for the larger annotation group.  The larger group was trained in waves, both on the annotation scheme and on the annotation apparatus (github and editing the RDF files). Initially annotation happened primarily in face to face meetings in a classroom setting, enabling shared discussion. As agreement was achieved annotators worked remotely, with increasingly rare discussion through email and github issues.  
+
+\subsubsubsection{Agreement statistics}
+ (hopefully get from the reports).
+    - First round
+    - Second round
+
+After agreement was achieved at these levels and problematic examples included in the annotation scheme and training materials, articles were only annotated by a single annotator.  Table XXXX shows a count of articles and the number of individual annotators that annotated them.
+
+\subsubsection{CSV serialization of annotations}
+
+We created an intermediate serialization of the annotations in a relational, tabular set of CSV files, in order to assure ourselves of the data model and most effectively share the annotations for the steps to come. The ER diagram below shows the format of these files XXXX, which were created in a series of SPARQL queries against a dataset hosted on data.world.
+
+\subsubsection{PDF conversion to XML with GROBID}
+
+\subsection{Motivation}
+
+Exploiting the manual annotations requires aligning them with the actual content of the articles. Training text mining tool with a dataset supposes to use the annotations in context, potentially exploiting features distributed in the whole article. The most widespread scientific publication format is, by far, PDF \footnote{The majority of publishing platforms still do not offer semantically structured output such as JATS, and focus on presentation-only functionalities with a final result in PDF and/or (X)HTML).}. Unfortunately, PDF is a pure presentation-oriented format and systematic and rich annotation or linking to such format is impossible. 
+
+For the purpose of anchoring annotations to actual content, we converted articles from PDF into structured XML representations using  GROBID \cite{grobid:2019}, an open source tool under Apache 2 license. The resulting XML makes possible fine-grained annotations with a rich set of attributes, while still mirroring the actual PDF content and object stream. In addition, GROBID makes explicitly available common document structures like paragraph, section headers, formula, figures, etc. which can be used for improving machine learning models. Finally, this  process includes a large range of structured extractions particularly useful for further document processing: extraction of citation contexts and the corresponding bibliographical references (resolved against CrossRef DOI), header metadata, PDF-layer annotations, etc. 
+
+\begin{figure}[h]
+\includegraphics[scale=0.35]{grobid-01.png}
+\caption{PDF and corresponding XML TEI extraction by GROBID}
+\label{fig:grobid1}
+\end{figure}
+
+\subsubsection{GROBID}
+
+GROBID relies on machine learning techniques to analyze and create structures from raw PDF content. After a first processing of the PDF by the pdfalto tool \cite{pdfalto:2019}, 9 different sequence labelling models are applied in cascade to normalize, structure the content, and finally build a full representation in TEI XML \ref{fig:grobid1}. 
+
+In contrast to JATS which focuses only on scholar articles, TEI-based structured document model covers the whole range of possible  document types relevant to science and technologies (including ebooks, reports, patents, etc.) and is adapted to multidimensional and heterogeneous annotations. TEI also includes customization techniques (ODD) that solves the problems of encoding ambiguities and divergences of JATS/NLM from one publisher to another.  
+
+\begin{table}[h]
+\begin{center}
+\includegraphics[scale=0.4]{full-text-accuracy.png}
+\end{center}
+\caption{Accuracy (f-score) of GROBID document body structures from raw PDF}
+\label{tab:structures1}
+\end{table}
+
+GROBID uses a mixture of supervised machine learning techniques (CRF and deep learning architectures). Contrary to alternative tools (like CERMINE or ScienceParse), GROBID does not use a massive amount of automatically aligned PDF/XML pairs from PubMed Central. GROBID relies on a small amount of high quality, fully aligned, manually annotated examples. For instance, our full text model (body of a paper) uses only 24 training examples. In contrast, CERMINE uses a dataset called GROTOAP2 containing 13,210 documents and Science Parse around 1 million automatically aligned documents. GROBID performs however at a similar or better accuracy, with richer structures (ScienceParse v1 and v2 in particular do not cover the text body). One of the main motivation for this approach is to cover more easily new layouts by adding a few examples to a small dataset.
+
+
+\begin{figure}[h]
+\includegraphics[scale=0.35]{pdf-annotation-view.png}
+\caption{PDF with interactive annotation layout}
+\label{fig:annotation1}
+\end{figure}
+
+
+The tool does not only produce annotations as traditional text mining, but also offer the possibility to come back easily to the original document layout by displaying annotations using the coordinates of the source PDF \ref{fig:annotation1}. 
+
+
+
+
+Finally an important advantage of GROBID for the general objectives of the SoftCite project is its ability to scale. A lot of efforts have been dedicated to the runtime, memory usage, robustness and capacity to scale with multithreading. Because we need to potentially process millions of PDF, reducing the processing of one document under the second is a key enabler. Recently, GROBID processed 915,000 publishers PDF per day (around 20M pages per day) with a single server with 16 CPU, for the complete full text structuring. 
+
+XXXX note to Patrice: can you explain how GROBID works? I'm thinking about 500 words? that it uses machine learning, can include the PDF location tracing, recognizes page elements (and removes as appropriate).  Ideally a side-by-side image showing part of a PDF page (with headers, a figure with caption, columns) and the resulting (or illustrative) TEI XML?
+  
+\subsection{Iterative Refinement}
+
+With the manually annotated data and a usable PDF to text conversion we began an iterative process of refinement. The goal was to produce consistent annotations within the TEI XML files on the understanding that these would be most immediately useful to the entity recognition community. The major tasks were 1) alignment (finding the strings for annotations within the TEI XML files) and 2) evaluation and improvement of consistency in the dataset. To assist with consistency and overall evaluation we also undertook prototype machine learning training and evaluation.
+
+\subsubsection{Alignment}
+
+(mainly Patrice)
+
+Alignment means identifying the location of each annotation within the TEI XML. This is surprisingly difficult due to the dual conversion of the PDF originals, first by annotators, second by the PDF to text conversion. Annotators perform one conversion when copying from the PDF document into the RDF document, and this can vary depending on combinations of PDF formats, operating systems, and PDF readers/plugins used. The second conversion is performed by GROBID as it extracts usable, consistent, text from the PDF. Issues encountered include non-character glyphs (i.e., effectively in-line images in the PDF), inconsistent conversion of spaces (often spaces visible in the PDF were not included in the copied text), inconsistent non-ascii conversions, inconsistent treatment of line and page breaks, remaining inclusion of PDF formatting artifacts (e.g., running headers).
+
+Alignment was achieved primarily through normalization of text from both sources, removing all forms of spaces, converting to lower case, XXXX. XXXX what tool was used to actually do the location? Was the PDF page coding ever used? XXXX Was edit distance used?
+
+(parenthetically these same set of issues occurred trying to align with the PMC XML form of the articles).
+
+In a set of cases manual annotation issues prevented automatic alignment, even after string normalization. Issues included annotation strings not found in the full_quote (e.g., a \texttt{software\_name} written out in full, whereas the \texttt{full\_quote} contained an acronym, XXXX). These were resolved through manual inspection of the annotations that could not be aligned, manually selecting sub-strings and manually searching within the TEI XML until the likely location was found. With that done, we added a \texttt{tei\_full\_quote} field copied directly from the TEI XML file to the RDF annotation, then directly selected from that string for specific annotations. Those changes were then exported in the CSV serialization, ensuring success when the alignment script was re-run.
+
+\subsubsection{Prototype Machine Learning training and evaluation and entity resolution}
+    - cycles of improvement (how trained, show bad results but improving.)
+    - use of wikidata for entity resolution and metadata.
+    
+\subsubsection{Consistency Decisions}
+
+The process of creating the TEI XML alignments together with the iterative machine learning involved substantial manual inspection of the annotations. We then sought consistency across the dataset through discussion, decisions, and edits. Consistency issues and their resolution are shown in Table XXXX. Throughout we maintain access to the original annotation, so that each decision could be changed by users of the dataset to explore the impact of particular annotation behaviors and issues (cite discussions of bias and shortcuts from Amazon three pager with Matt).
+
+\begin{markdown}
+- Reflect on what sort of disagreement should be eliminated in manually coded data
+    - consistency in identification as software (all occurrences of same entity should either be software or not software, regardless of annotator's certainty). 
+    - reclassification of software platforms/websites as not software (e.g., Amazon).  Similarly we discussed whether things described as "models" but implying execution (e.g. simulation models) ought to be distinguished. In the end we decided to keep these annotated as software. We attempted to discriminate between data contained in databases and the database software itself, a difficult task. We decided to only code these as software when it was clear that the database container was being discussed as opposed to the data in the database container (e.g., mysql would be included, but "protein database" would not).
+    - `creator` in in-text citation. Annotators were inconsistent in whether they annotated names in an in-text citation as `creator`. Given that GROBID automatically identifies in-text citations and links them to references, we decided that this information could be programmatically recovered if needed, and decided to exclude in-text citation text from annotation.
+    - Addresses in `creator` annotation. After review and discussion we decided to exclude address information from the `creator` tag as it can likely be identified through geonames entity extraction.
+    - Abbreviations were treated inconsistently in our annotations. After discussion in which we considered annotating these separately (different forms of `software_name`), we decided to include abbreviations in the `software_name` field. e.g., if the full sentence read "Statistical Package for the Social Sciences (SPSS)" then `software_name` would include that whole string, rather than just "Statistical Package for the Social Sciences" or just "SPSS".
+    - Words indicating versions were excluded. Annotations were inconsistent on whether or not to include words indicating versions. e.g., if the full text read "we used v3.4.5" some annotators would have had the `version` field as "v3.4.5" whereas others would have just included "3.4.5" (other examples include the full word version or release); we standardized to "3.4.5" reasoning that machine learning would pick up on the nearby association of "version" or "v" with these codes. We retained letters in version labels "3.4.5-rc", and when the version label was itself a word (e.g., "Android ice cream sandwich") we included that (but were it "Android version ice cream sandwich" the `version` field would just be "ice cream sandwich").
+        
+- Extend decisions across non-annotated text (recovering mentions missed by annotators)
+    - As our consistency iterations, machine learning, and entity resolution identified software entities, we searched for the `software_name` string across the dataset and manually reviewed each instance.  In some cases the `software_name` had many synonyms (e.g., "Extractor") and so many possible mentions identified in this way were not ultimately annotated as software. In other cases (XXXX how many?) the string was indeed a missed software annotation (e.g., "SPSS").
+    
+- Merge infrequently used annotation labels
+    - We found that `version_date` was very rarely used, so we merged `version_number` and `version_date` and renamed them simply `version`.
+
+        
+- List of remaining consistency issues (Github #638).
+    
+Our identification and resolution of consistency issues was largely conducted via github issues (and we encourage dataset users to continue to post issues there).     
+# Summary of direct findings (ie just analysis of TEI XML file)
+    - Counts of software mentions, league tables (what is the most mentioned software overall?)
+    % 4130 in the xml. 
+    - Distribution of Software mentions
+        - per page, per article etc.
+        - How many paragraphs 
+    - Window analysis
+        - How much could we cut down the content analysis work?
+        - How well should whitelists work?
+
+\end{markdown}
+
+
+\section{Future work}
+
+    
+Our future work will focus on using this dataset to train machine learning, and then using the results of that to improve the visibility of software by creating a database of software mentions in across a large set of open access PDFs, and making those available through the tool CiteAs. Finally, we are continuing to expand the Softcite Dataset in two ways: through paid crowdsourcing, and through building a community to further software mention annotation.
+
+- Use in neural network machine learning (refer to companion paper which reports results of machine learning using different algorithms and their computational trade offs.).
+    
+One use of this dataset is to provide a database of software mentions for a tool called CiteAs (xxxx cite this, hah). CiteAs seeks to improve the visibility of software work in science by improving software citation. In particular CiteAs seeks to gather citation requests (the way a creator of software would like to be cited) and make them easily available to users of software, as well as editors and reviewers. Software citation is, in part, difficult because unlike a paper, simply having the software in hand does not communicate how that software should be cited. CiteAs addresses this by taking a query and spidering the web seeking requests for citation. Currently requests for citation searched include free text requests in README and CITATION files in repositories, certain conventional pages on project webpages (e.g., citing.html), as well as rare but effective machine readable requests for citation (e.g., CITATION.ccf, CodeMeta files, and language specific methods such as the DESCRIPTION file for R packages). The softcite dataset allows us to train a system to recognize how software is actually cited in publications, run it over a large collection of PDFs, then present those results. We intend to incorporate those into CiteAs suggestions. We hope that CiteAs will then prompt clearer requests and coalesce the use of specific citations. Finally, we intend to use this database of mentions to develop a Software Impact Story, providing a resource for those contributing software in science to make an argument for their impact.
+
+Finally, we are continuing to expand the Softcite Dataset in two ways: through paid crowdsourcing, and through building a community to further software mention annotation. First, we are learning from the issues described above and working with a crowdsourcing-based data labeling infrastructure called TagWorks, which will provide a simpler interface and allow scaling to the crowd. We are able to use the gold standard dataset described in this publication to evaluation different approaches. For example we will be able to compare the precision and recall of crowds, compared to student annotators in this domain. We will also be able to compare techniques to reduce annotation effort described above, such as trying heuristics to select mention-rich parts of papers. Finally the crowd effort will. Second, we are attempting to build a community of software mention annotators. We have reached out to  other groups with labeled software datasets and are seeking to convert those to forms that are comparable and useful together with the Softcite Dataset. We are also publishing our annotation scheme and describing our infrastructural experiences to provide paths for others seeking to annotation software mentions.
+
+In conclusion, we present a manually annotated dataset of software mentions in full-text publications, and we encourage the academic community to both make use of this dataset for training machine learning systems, as well as providing critique and working together with us to expand the dataset over time. The project continues at http://github.com/howisonlab/softcite-dataset.
+
+%Basic chunk example
+%-------------------------------------------------------------------------------------
+You can type R commands in your \LaTeX{} document and they will be properly run and the output printed in the document.
+
+<<chunk1>>=
+# Create a sequence of numbers
+X = 2:10
+
+# Display basic statistical measures
+summary(X)
+
+@
+%--------------------------------------------------------------------------------
+
+\bibliographystyle{plain}
+\bibliography{biblio,references-zotero}
+
+
+\end{document}
+
+
