@@ -7,6 +7,7 @@
 \usepackage{booktabs}
 \usepackage{authblk}
 \usepackage{verbatim}
+\usepackage{cmap}
 %\usepackage[footnotes,definitionLists,hashEnumerators,smartEllipses,hybrid]{markdown}
 
 \providecommand{\keywords}[1]
@@ -20,25 +21,21 @@
 \author[2]{Patrice Lopez}
 \author[1]{Caifan Du}
 \author[1]{Johanna Cohoon}
+\renewcommand\Authands{, }
 
-\affil[1]{
-  \institution{The University of Texas at Austin}
-  \streetaddress{1616 Guadalupe Street, Austin, TX, USA}
-}
-\affil[2]{
-  \institution{science-miner, France}
-}
+\affil[1]{The University of Texas at Austin, USA}
+\affil[2]{SCIENCE-MINER, France}
 
 \date{August 2019}
 
 \begin{document}
-\begin{markdown}
+%\begin{markdown}
 
 \begin{abstract}
     In this paper we introduce a dataset of mentions of software in the scientific literature. The dataset is intended to facilitate training of supervised machine learning to accomplish entity recognition for software. In this paper we provide both a brief introduction to the dataset and an extended discussion of the creation of the dataset. We do this for two reasons. First, recent scholarship and practice has shown the importance of provenance and context for appropriate and ethical use of supervised machine learning. Second, we hope that presenting our experience, including our missteps, can provide methodological guidance to others creating datasets for supervised machine learning.
 \end{abstract}
 
-\keywords{}
+\keywords{software mention, software citation, dataset creation}
 
 \maketitle   
 
@@ -94,7 +91,7 @@ The dataset is published as a single TEI XML file containing a corpus with inlin
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{tei-software-mention.png}
+    \includegraphics[width=1\textwidth]{images/tei-software-mention.png}
     \caption{Annotated corpus excerpt from SoftCite dataset}
     \label{fig:tei-1}
 \end{figure}
@@ -111,7 +108,7 @@ The dataset described in this paper, the SoftCite dataset, is distributed under 
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.35]{SoftciteCreationDiagram.png}
+\includegraphics[scale=0.35]{images/SoftciteCreationDiagram.png}
 \caption{SoftCite Dataset Creation Process}
 \label{fig:process1}
 \end{figure}
@@ -136,7 +133,7 @@ To indicate that an article was appropriate for inclusion in our study, annotato
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.4]{fixme.png}
+\includegraphics[scale=0.4]{images/fixme.png}
 \caption{RDF files were generated for annotators when they requested a new article to code. Generated files included the word FIXME to indicate where annotators should edit the file.}
 \label{fig:fixme}
 \end{figure}
@@ -167,14 +164,14 @@ Once the alignment was achieved, we spotted and compared the \emph{full\textunde
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{article-dist.png}
+    \includegraphics[scale=0.5]{images/article-dist.png}
     \caption{Number of articles at each percentage agreement level}
     \label{fig:agree2}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{agree_venn.png}
+    \includegraphics[scale=0.4]{images/agree_venn.png}
     \caption{Counts of software mentions located in agreement within one article}
     \label{fig:agree1}
 \end{figure}
@@ -190,17 +187,39 @@ GROBID (GeneRation Of Bibliographic Data) is a text mining library utilizing mac
 Relying on a mixed set of supervised learning techniques, GROBID analyzes and creates structures from raw PDF content. After processing the PDF by the pdfalto tool \cite{lopez_pdfalto_2019}, nine different sequence labelling models are applied in cascade to normalize and structure the content, and finally build a full representation of the PDF structure in TEI XML format \ref{fig:grobid1} \ref{table:structures1}. Other than producing the TEI XML output, GROBID can also display annotations on top of the source PDF, as shown in Figure \ref{fig:annotation1}, providing a visual, easy to apprehend, and contextual feedback for the annotations. 
 
 \begin{figure}[h]
-\includegraphics[scale=0.23]{grobid-02.png}
+\includegraphics[scale=0.23]{images/grobid-02.png}
 \caption{PDF and corresponding XML TEI extraction by GROBID}
 \label{fig:grobid1}
 \end{figure} 
 
+%\begin{table}[h!]
+%\begin{center}
+% \begin{tabular}{ m{3.5cm} m{3cm} }
+% \hline
+% Structure & Accuracy (f-score)  \\
+% \hline
+% section header & 97.2 \\
+% paragraph & 92.1 \\ 
+% table reference & 86.8 \\
+% biblio. reference & 85.2 \\
+% formula & 80.4 \\
+% formula reference & 75.7 \\
+% figure reference & 72.5 \\
+% table & 71.3 \\
+% figure & 63.6 \\
+% \hline
+% \end{tabular}
+% \end{center}
+% \caption{Accuracy (f-score) of GROBID document body structures from raw PDF}
+% \label{table:structures1}
+%\end{table}
+
 \begin{table}[h!]
 \begin{center}
- \begin{tabular}{ m{3.5cm} m{3cm} }
- \hline
+ \begin{tabular}{ccl}
+ \toprule
  Structure & Accuracy (f-score)  \\
- \hline
+ \midrule
  section header & 97.2 \\
  paragraph & 92.1 \\ 
  table reference & 86.8 \\
@@ -210,7 +229,7 @@ Relying on a mixed set of supervised learning techniques, GROBID analyzes and cr
  figure reference & 72.5 \\
  table & 71.3 \\
  figure & 63.6 \\
- \hline
+ \bottomrule
  \end{tabular}
  \end{center}
  \caption{Accuracy (f-score) of GROBID document body structures from raw PDF}
@@ -218,7 +237,7 @@ Relying on a mixed set of supervised learning techniques, GROBID analyzes and cr
 \end{table}
 
 \begin{figure}[h]
-\includegraphics[scale=0.35]{pdf-annotation-view.png}
+\includegraphics[scale=0.35]{images/pdf-annotation-view.png}
 \caption{PDF with interactive annotation layout provides a visual, easy to apprehend, and contextual feedback for the annotations}
 \label{fig:annotation1}
 \end{figure}
@@ -263,7 +282,7 @@ Each annotated software mention was assigned a unique identifier (see figure\ref
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{tei-to-rdf.png}
+    \includegraphics[width=1\textwidth]{images/tei-to-rdf.png}
     \caption{Each software mention in the TEI XML corpus has a unique identifier "xml:id" which links the annotation back to the provenance data in RDF format}
     \label{fig:tei-rdf}
 \end{figure}
@@ -278,18 +297,36 @@ Typo fixing does not solely allow us to improve alignment, but also enables us t
 
 Meanwhile, in the economic article set, thus far we have 26 articles that are annotated by more than one annotator. Despite the relatively small number of annotated articles, we have not spotted agreement level that is drastically different from that in the PMC article set. The overall agreement counting in all the fields is 66.3\%. The agreement in the \emph{software\textunderscore name} field is 72.1\%. \emph{Version\textunderscore number} still has the highest agreement of 76.7\%; while \emph{version\textunderscore date} has the least agreement of 43.4\%. The agreement is 59.2\% in the field of \emph{creator} and 71.3\% in the field of \emph{url}. In Table ?? we present the number of annotations and the corresponding agreement achieved by field in these two article sets.
 
-\begin{table}
+%\begin{table}
+%\begin{center}
+% \begin{tabular}{  m{3cm}  m{2cm} m{2cm}  m{2cm}  } 
+% \hline
+% Labels & Precison & Recall & f-score  \\ [0.5ex] 
+% \hline
+% \emph{software} & 86.5 & 72.24 & 78.67 \\ 
+% \emph{publisher} & 85.45 & 74.84 & 79.72 \\
+% \emph{version} & 89.65 & 84.99 & 87.14 \\
+% \emph{url} & 69.19 & 63.35 & 65.03 \\
+% micro-average & 82.7 & 73.85 & 77.64 \\ [1ex] 
+% \hline
+%\end{tabular}
+%\end{center}
+%\label{table:result2}
+%\caption{Recent Results for prototype machine learning training and evaluation by using a linear CRF approach}
+%\end{table}
+
+\begin{table}[h!]
 \begin{center}
- \begin{tabular}{  m{3cm}  m{2cm} m{2cm}  m{2cm}  } 
- \hline
- Labels & Precison & Recall & f-score  \\ [0.5ex] 
- \hline
+ \begin{tabular}{cccl} 
+ \toprule
+ Labels & Precison & Recall & f-score  \\ 
+ \midrule
  \emph{software} & 86.5 & 72.24 & 78.67 \\ 
  \emph{publisher} & 85.45 & 74.84 & 79.72 \\
  \emph{version} & 89.65 & 84.99 & 87.14 \\
  \emph{url} & 69.19 & 63.35 & 65.03 \\
- micro-average & 82.7 & 73.85 & 77.64 \\ [1ex] 
- \hline
+ micro-average & 82.7 & 73.85 & 77.64 \\
+ \bottomrule
 \end{tabular}
 \end{center}
 \label{table:result2}
@@ -307,10 +344,10 @@ The published Softcite dataset in TEI XML format includes 2,317 paragraphs from 
 
 \begin{table}
 \begin{center}
-\begin{tabular}{m{3.5cm} m{3.5cm}}
-\hline
+\begin{tabular}{ccl}
+\toprule
      Software      & Number of annotations \\
-     \hline
+     \midrule
     SPSS           & 315                   \\
     SAS            & 94                    \\
     ImageJ         & 73                    \\
@@ -321,7 +358,7 @@ The published Softcite dataset in TEI XML format includes 2,317 paragraphs from 
     STATA          & 49                    \\
     MUMMALS        & 47                    \\
     GraphPad Prism & 43                    \\
-    \hline
+    \bottomrule
 \end{tabular}
 \end{center}
 \label{table:top10}
@@ -333,7 +370,7 @@ Overall, 37 trained annotators individually annotated between 1 and 939 entities
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{article-over-annotation.png}
+    \includegraphics[scale=0.5]{images/article-over-annotation.png}
     \caption{Distribution of article counts over annotation counts per article}
     \label{fig:compare1}
 \end{figure}
@@ -438,7 +475,7 @@ summary(X)
 
 
 
-\end{markdown}
+%\end{markdown}
 \end{document}
 
 
