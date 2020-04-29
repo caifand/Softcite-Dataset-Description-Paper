@@ -91,7 +91,7 @@ The dataset is published as a single TEI XML file containing a corpus with inlin
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{tei-software-mention.png}
+    \includegraphics[width=1\textwidth]{images/tei-software-mention.png}
     \caption{Annotated corpus excerpt from SoftCite dataset}
     \label{fig:tei-1}
 \end{figure}
@@ -108,7 +108,7 @@ The dataset described in this paper, the SoftCite dataset, is distributed under 
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.35]{SoftciteCreationDiagram.png}
+\includegraphics[scale=0.35]{images/SoftciteCreationDiagram.png}
 \caption{SoftCite Dataset Creation Process}
 \label{fig:process1}
 \end{figure}
@@ -133,7 +133,7 @@ To indicate that an article was appropriate for inclusion in our study, annotato
 
 \begin{figure}[h]
 \centering
-\includegraphics[scale=0.4]{fixme.png}
+\includegraphics[scale=0.4]{images/fixme.png}
 \caption{RDF files were generated for annotators when they requested a new article to code. Generated files included the word FIXME to indicate where annotators should edit the file.}
 \label{fig:fixme}
 \end{figure}
@@ -164,14 +164,14 @@ Once the alignment was achieved, we spotted and compared the \emph{full\textunde
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{article-dist.png}
+    \includegraphics[scale=0.5]{images/article-dist.png}
     \caption{Number of articles at each percentage agreement level}
     \label{fig:agree2}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[scale=0.4]{agree_venn.png}
+    \includegraphics[scale=0.4]{images/agree_venn.png}
     \caption{Counts of software mentions located in agreement within one article}
     \label{fig:agree1}
 \end{figure}
@@ -187,7 +187,7 @@ GROBID (GeneRation Of Bibliographic Data) is a text mining library utilizing mac
 Relying on a mixed set of supervised learning techniques, GROBID analyzes and creates structures from raw PDF content. After processing the PDF by the pdfalto tool \cite{lopez_pdfalto_2019}, nine different sequence labelling models are applied in cascade to normalize and structure the content, and finally build a full representation of the PDF structure in TEI XML format \ref{fig:grobid1} \ref{table:structures1}. Other than producing the TEI XML output, GROBID can also display annotations on top of the source PDF, as shown in Figure \ref{fig:annotation1}, providing a visual, easy to apprehend, and contextual feedback for the annotations. 
 
 \begin{figure}[h]
-\includegraphics[scale=0.23]{grobid-02.png}
+\includegraphics[scale=0.23]{images/grobid-02.png}
 \caption{PDF and corresponding XML TEI extraction by GROBID}
 \label{fig:grobid1}
 \end{figure} 
@@ -237,7 +237,7 @@ Relying on a mixed set of supervised learning techniques, GROBID analyzes and cr
 \end{table}
 
 \begin{figure}[h]
-\includegraphics[scale=0.35]{pdf-annotation-view.png}
+\includegraphics[scale=0.35]{images/pdf-annotation-view.png}
 \caption{PDF with interactive annotation layout provides a visual, easy to apprehend, and contextual feedback for the annotations}
 \label{fig:annotation1}
 \end{figure}
@@ -282,7 +282,7 @@ Each annotated software mention was assigned a unique identifier (see figure\ref
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=1\textwidth]{tei-to-rdf.png}
+    \includegraphics[width=1\textwidth]{images/tei-to-rdf.png}
     \caption{Each software mention in the TEI XML corpus has a unique identifier "xml:id" which links the annotation back to the provenance data in RDF format}
     \label{fig:tei-rdf}
 \end{figure}
@@ -370,7 +370,7 @@ Overall, 37 trained annotators individually annotated between 1 and 939 entities
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{article-over-annotation.png}
+    \includegraphics[scale=0.5]{images/article-over-annotation.png}
     \caption{Distribution of article counts over annotation counts per article}
     \label{fig:compare1}
 \end{figure}
