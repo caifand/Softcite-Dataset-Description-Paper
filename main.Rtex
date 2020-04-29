@@ -1,61 +1,459 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{longtable}
 \usepackage{comment}
-\usepackage[footnotes,definitionLists,hashEnumerators,smartEllipses,hybrid]{markdown}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{authblk}
+\usepackage{verbatim}
+\usepackage{cmap}
+%\usepackage[footnotes,definitionLists,hashEnumerators,smartEllipses,hybrid]{markdown}
 
+\providecommand{\keywords}[1]
+{
+    \small{}
+    \textbf{\textit{Keywords}} #1
+}
 
 \title{Softcite-dataset: A dataset of software mentions in scientific publications}
-\author{James, Patrice, Caifan, and Hannah}
+\author[1]{James Howison}
+\author[2]{Patrice Lopez}
+\author[1]{Caifan Du}
+\author[1]{Johanna Cohoon}
+\renewcommand\Authands{, }
+
+\affil[1]{The University of Texas at Austin, USA}
+\affil[2]{SCIENCE-MINER, France}
+
 \date{August 2019}
 
 \begin{document}
+%\begin{markdown}
 
-\maketitle
+\begin{abstract}
+    In this paper we introduce a dataset of mentions of software in the scientific literature. The dataset is intended to facilitate training of supervised machine learning to accomplish entity recognition for software. In this paper we provide both a brief introduction to the dataset and an extended discussion of the creation of the dataset. We do this for two reasons. First, recent scholarship and practice has shown the importance of provenance and context for appropriate and ethical use of supervised machine learning. Second, we hope that presenting our experience, including our missteps, can provide methodological guidance to others creating datasets for supervised machine learning.
+\end{abstract}
 
-\begin{markdown}
-# Motivation
+\keywords{software mention, software citation, dataset creation}
 
-Make software contributions more visible.
+\maketitle   
 
-# Summary of existing resources
+\section{Motivation}
 
-Cite new review paper.
+Software is essential to modern scholarship, yet today researchers are frustrated by redundant, incompatible, and poorly supported pieces of software. Previous research has argued that this is in part because software, and work on software, is relatively invisible as a form of scholarly work \cite{borgman_knowledge_2013} and thus offers no reward to motivate high quality work. In particular, when preparing publications, researchers rarely cite the software they used in their research \cite{howison_software_2016}. The resulting lack of visibility reduces the incentive to undertake the work needed to share, support, and improve scholarly software. This lack of visibility also makes communities less likely to coalesce around particular packages, rendering economies of scale in its production, maintenance, documentation hard to achieve. Without adequate incentives, the academy is likely to under-invest in software work. Consequently, software quality suffers. The effectiveness of scholarship and its funding are undermined.
 
-# Description of the dataset
+In this paper, we describe work intended to address the gap between the need for software work and the reputational rewards gained (or not gained) for that work. Because software, unlike publications, is rarely formally mentioned (\textit{i.e.} cited) in the research literature, we used qualitative coding procedures to create a dataset of informal and formal software mentions in published articles. We call this the Softcite dataset. This dataset is compiled to train machine learning systems to identify informal mentions of software in publications (a process called "entity extraction"). Much as formal mentions (\textit{i.e.} citations) of journal articles indicate some use of the articles and therefore confer credit to their authors,  we expect that systems trained on this dataset will facilitate bibliometric research, including tracing the spread of methods through publications, and identifying communities of practice across fields. Ultimately, however, we hope our efforts will facilitate systems making the software underlying scholarship more visible, and thus a resource to allow those doing software work to argue for their contribution more clearly. 
 
-#. XML form
-#. CSV form  
-#. RDF form
-    
-# Creation of the dataset
-## Coding apparatus
-    - Why? Complexity in creation of coding units same time as coding of those units
-    - Intention was to link to references.
-## Coding effort
-    - How many students over how long?)
-## Agreement statistics
-    - First round
-    - Second round
-## Data Cleaning
-    - Reflect on what sort of disagreement should be eliminated.
-## PDF conversions with GROBID
-    - PDF conversions
-    - Alignment of content analysis coding with GROBID XML
+Furthermore, as the development of gold standard machine learning datasets is, as yet, a relatively uncommon research technique, we describe our research process in detail in this paper. In the interest of transparency, we share a full account of the methods we used—including training undergraduate research assistants, development of a coding scheme for identifying software mentions, resolving issues with PDF-to-text conversions, and curating and cleaning the dataset. By relaying a full account of our work and experience, we hope to increase the utility of the Softcite dataset itself as well as provide other researchers with an account that is useful for their own pursuits of developing datasets for machine learning.
 
-# Summary of direct findings
-    - Counts of software mentions, league tables
+\section{Background}
+
+Researchers who build software have long pointed out that their contribution does not appear in scientific publications \cite{katz_citation_2013, katz_summary_2014, stodden_scientific_2010, stodden_toward_2013}. Empirical research confirms this issue. Howison and Herbsleb, for example, examined the work leading to three publications by interviewing the authors about the software packages used, then interviewing the authors of that software and outward to all its dependencies \cite{howison_scientific_2011}. Very few of those packages and none of their dependencies were actually mentioned in the publications, meaning the software authors could not receive credit via citation. Interviews with scientists make clear that they feel that their software contributions are not visible in the scientific literature, an area that counts most for the reputation of scientists. One informant laughingly estimated that "less than 10\%" of software use results in citations \cite{howison_understanding_2015}. Research has found similar issues with data and data citation \cite{borgman_scholarship_2007, edwards_science_2011}.
+
+Empirical data shows that even when software use is mentioned in articles those mentions are too often informal for cited authors to know that their software was credited. Howison and Bullard  examined 90 randomly selected biology articles and manually examined them for mentions of any kind—formal citations or informal mentions \cite{howison_software_2016}. They found that informal mentions of software occur more frequently than formal citations. In fact, only 37\% of mentions involved formal citations either to domain papers or to “software papers” written to describe software. The remaining 63\% of mentions were informal, such as just mentioning project names in the full text, project URLs in footnotes, and citations to non-standard publications such as user manuals and project websites.
+
+The absence of software citations in publications and the informality of mentions when they do occur mean that systems measuring impact through bibliometrics (\textit{e.g.} Google Scholar, Scopus, and Web of Science) do not help software developing scientists make their case for scientific contribution and impact. Without something formal to count, their efforts are not counted. Perhaps even more importantly, qualitative stories of impact are hard for software-contributing scientists to experience and report; this is an issue given their importance to arguing for support from science funders. Some authors of software projects have attempted to resolve this problem by systematically combing the literature for mentions of their work. NanoHub, for instance, developed a procedure for identifying and categorizing articles that mentioned their software, removing false positives and categorizing the extent of use and type of impact (the full protocol is described in \cite{howison_understanding_2015}). The system, while being functional and innovative, was time-consuming, involving content analysis by multiple undergraduate students and review by post-docs and PIs.
+
+This lack of visibility reduces the incentive to share and support scientific software. Scientific software is rarely shared openly \cite{stodden_scientific_2010, ince_case_2012}. While scientists hold legitimate competitive concerns, research demonstrates that scientists perceive the substantial work required by sharing and see its rewards to be insufficient.  Sharing software is undoubtedly extra work; from adapting the software for use outside individual computers, to documenting the limits of the code, managing user requests, to encouraging and testing code contributions \cite{trainer_personal_2015}. Trainer et al. \cite{trainer_personal_2015} also found evidence that scientists are interested in sharing, but wary of extra, unrewarded, effort. Their interviewees did not suggest that they resented providing user support (in fact, they felt an obligation to provide support). Rather, they feared—given other demands on their time—they would be unable to support users well and would slow the work of other scientists. Thus, the issue is not that scientists are selfish \emph{per se};  they are keen to share and to realize communitarian values of science \cite{stodden_scientific_2010}. The issue is that realizing the benefits of sharing requires more than simply uploading code. If science wants well supported and constructed software, then science must provide incentives and rewards to those undertaking this work. The efforts described in this paper are premised on the understanding that the best incentive is to acknowledge software work as a scientific contribution and to do so through citations in the scientific literature.
+
+Without adequate incentives, scientists are likely to under-invest themselves in software work and scientific software quality suffers. All is not well with software in science, even as software grows rapidly in importance across disciplines \cite{atkins_report_2003, joppa_troubling_2013}. Users frequently find software frustrating and poorly documented \cite{joppa_troubling_2013, katz_summary_2014}. Software is often written using monolithic architectures, rather than adopting preferred modular architectures \cite{boisvert_architecture_2001}. Software has been a concern in many fields, from retractions in biomedicine to the identification of errors in important results in economics (the Reinhart-Rogoff conclusion) and recent concerns over the validity of fMRI studies \cite{miller_scientists_2006, eklund_cluster_2016}. Even software deposited in repositories has not fared well over time, the Journal of Money, Banking, and Finance found less than 10\% of their repository was reproducible, in part because no maintenance had been done to keep software up to date \cite{mccullough_lessons_2006}. Researchers have found that sharing and studying software code is crucial for replicability, over and above abstract descriptions of algorithms \cite{ince_case_2012}. 
+
+Beyond concerns over specific pieces of software there are concerns over the software practices of scientists, including scientist’s ability to design the software architecture, manage versions, testing, and packaging. Difficulties in recovering software and data released from the Climate Research Unit in the UK demonstrate this inability \cite{house_of_commons_disclosure_2010}. The devaluation of software work and processes could cost significant time later on and threatens the credibility of science. Evidence from the “Workshop on Sustainable Software for Science: Practice and Experiences” (WSSSPE) series makes clear that scientists often do not follow best practices and have difficulty developing software in open communities, as is common in non-scientific open source software world \cite{katz_summary_2014, katz_report_2016}. For an open community to succeed there is substantial and important work in monitoring downstream and upstream dependencies, encouraging outside contributions, timing and managing releases \cite{bietz_synergizing_2010, trainer_personal_2015}. However, if building quality software is not acknowledged as a scientific contribution then the even more removed work of building software communities will be even more poorly rewarded and thus motivated.
+
+In summary, we argue that it is problematic that software is so rarely visible in the scientific literature and in the reputation systems built on the citation of that literature. We deem the scientific literature (journal articles, conference papers, and pre-print papers) as crucial because it is the most important representation of scientific contribution \cite{merton_matthew_1988}. If software work is to be seen as an equally valid form of scientific contribution, then it ought to be visible in the same ways that other scientific contributions are: through citations in articles. Moreover, addressing the visibility of software work in the literature allows us to leverage the existing institutional valuation of citations, rather than attempt to build a parallel accounting system for software contributions.
+
+We seek to address the problem of the invisibility of software in the scientific literature in order to alter incentives and, ultimately, to improve the software available to scientists. We do this by providing a "gold-standard" dataset, intended to be used by others for training machine learning systems. The provenance of datasets is crucial to their appropriate use as machine learning models trained in one context will return errors if applied to another \cite{gebru_datasheets_2020}. In this paper we therefore introduce and document the process of creating the SoftCite dataset and discuss what we have learned about creating entity extraction datasets.Furthermore, as concern over reproducibility grows across the sciences and machine learning continues to advance as a research tool, we provide rich detail in our account to offer methodological guidance to those researchers  hoping to offer methodological guidance.
+
+\section{Summary of existing resources}
+
+Most previous work attempting to raise the visibility of software work has been focused outside the scholarly literature.  Many systems examine and report on code dependencies (\url{http://scisoft-net-map.isri.cmu.edu/}, \url{http://depsy.org}, \url{http://libraries.io}, \url{https://www.versioneye.com}).  Some repository-specific tools have used download statistics to rank packages or have provided a place for users to rate and comment (\url{http://pypi-ranking.info/alltime}, \url{http://www.crantastic.org/}, \url{http://ascl.net}). Unfortunately, these approaches miss software and scripts that are not released as formal packages (common in scientific work) and they bypass the major mechanism of scholarly communication—the research paper.
+
+It is challenging to build incentives based on software citations in research papers. Because there has been no standardized citation practice to date. As a result the mention of software in published papers usually falls out of the sight of existing citation systems and thus the scientific incentive structures. There are two approaches to improving this situation: prospective and retrospective. The prospective approach seeks to improve and change software citation practices by designing standardized ways to cite software, building tools to make it easy to cite software, and working to drive the implementation and uptake of software citation among scientists. This will make software references in future papers visible to existing citation tools. The retrospective approach takes current and historical practices as given, mining the literature to make the best use of those mentions of software that are present already. With this retrospective approach we can establish incentives for software reuse that is happening today while we wait for the behavioural change. 
+
+The FORCE11 Working Group on Software Citation \footnote{\url{https://www.force11.org/group/software-citation-working-group}} is leading the prospective approach, leveraging the experience of the FORCE11 organization in addressing data citation. They are defining a set of metadata elements that ought to be in ideal software citations. FORCE11 brings together stakeholders including authors, style guide writers, scientific societies, citation software producers, and publishers to design and implement new standardized citation formats and guidelines. Similarly, other players are working to provide new paths forward for software citation: for example, Mozilla Science, Github, and Zenodo are providing a way to archive a software release and obtain a DOI to reference it. Publication venues like the Journal of Open Research Software and the Journal of Open Source Software are providing new ways to obtain a citation target for software contributions. Some well established journals like ACM Transactions on Mathematical Software are also providing peer reviewed publications of software itself. The Astrophysics Source Code Library (ASCL) is another important demonstration of the prospective approach. ASCL provides “landing pages”, identifiers, and suggested citations for astrophysics software and is working with the Astrophysics Data System to improve indexing of software citations in the Astrophysics literature \cite{allen_improving_2015}. Each of these prospective efforts works to create new means for scientific software to be cited in the future. We believe that these efforts are important; indeed, the PIs in this grant participate in these efforts and are working toward their success. 
+
+In contrast, the retrospective approach seeks to leverage existing practice, analyzing the literature to identify mentions of software use and operationalize these mentions as incentives. A retrospective approach is possible, as mentioned above, because while formal software citation practices are problematic, software use is informally mentioned in the literature. Authors mention project names in the full text, place project URLs in footnotes, cite user manuals and project websites, and more \cite{howison_software_2015}.
+
+If we can automatically detect these informal mentions in the same way that commercial services like Google Scholar automatically detect formal citation, we can significantly increase the visibility of research software in the literature. This can quickly jump start a software credit ecosystem, while we wait for prospective approaches to gradually build a best-practice citation culture. 
+
+There are challenges to the retrospective approach. In particular, it’s difficult for machines to parse the diverse morphology of informal mentions, making them harder to detect than traditional formal citations.  Largely because of this, researchers have only recently begun to tackle the problem of automatically finding software mentions at a meaningful scale. The retrospective approach to date has been mostly rule-based. The straightforward natural language processing (NLP) technique uses a set of rules to score each word on its likelihood of being a software mention. For instance, the name “FooPlot” in the phrase “we used the FooPlot 1.2 program” could score points for preceding “program” and having a version number next to it—characteristics common to software mentions. Words with enough points count as software mentions.
+
+Using this rule-based technique, Duck, Nenadic, Brass, Robertson, and Stevens identify software mentions with a precision of 0.58 and recall of 0.68. In a later paper they improve this to 0.80 and 0.64 respectively \cite{duck_bionerds:_2013, duck_survey_2016}. Piwowar and Priem employ a related approach in the Depsy application (\url{http://depsy.org}), using preset search phrases to find mentions \cite{piwowar_depsy:_2016} . These efforts rely on researcher intuition to guide the selection and weighting of rules, limiting the ability to systematically optimize them. Pan, Yan, Wang, and Hua address this limitation by generating the rules automatically, using a machine-learning bootstrapping technique \cite{pan_assessing_2015}. Their approach sacrifices recall (0.43)—meaning fewer software mentions are identifiable—but results in greatly improved precision in identifying software mentions (0.94)—meaning there are fewer false-positives among identified software mentions. However, Pan et al.'s approach still relies on a discreet rule set.
+
+Another intelligent approach to finding software mentions is to leverage supervised learning, which applies a machine learning classifier to evaluate each token in the text and classify the token as software or not. This is a typical name-entity recognition task. It is usually modeled as sequence labeling, a process in which the token is evaluated and classified in text sequences. Such natural language processing (NLP) techniques have been used to identify the mention of datasets in the scholarly literature as well \cite{neveol_semi-automatic_2011}. This is the less frequently applied approach. Our presented efforts falls into this category of supervised machine learning.
+
+\section{Description of the dataset}
+
+The SoftCite Dataset consists of annotations within plain text paragraphs extracted from the PDF version of Open Access academic papers. The types of annotations are: 1) software mention, and its ancillary information, if present: software name, version, publisher, url; 2) other document elements including article metadata, figure, table, and in-text citation call-outs. Paragraphs were included if they had software mentions, therefore sections of text without mentions (negative examples for supervised machine learning) are from nearby in publications.
+
+The dataset is published as a single TEI XML file containing a corpus with inline annotations \cite{tei:2019}. Within the corpus, each article is identified with a set of stable identifier (DOI, PubMed ID, or PubMed Central ID) that makes possible to retrieve the Open Access version of the article. A snapshot of the corpus with annotated software mentions in line is presented in Figure \ref{fig:tei-1}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{tei-software-mention.png}
+    \caption{Annotated corpus excerpt from SoftCite dataset}
+    \label{fig:tei-1}
+\end{figure}
+
+Each annotation has an identifier associated with it, allowing the provenance of the annotation to be traced back through the annotation process, as much as possible. Provenance information includes the original annotation (entity type, annotator, certainty score, whether mentioned software was used) as well as any subsequent modifications during alignment and consistency checking.
+
+The TEI XML format is, we hope, formatted for the easiest use by NLP and machine learning toolchains. The corpus-level description permits to represent the whole resource in a compact manner as a single file. By following the latest TEI guidelines, we are able to share a language resource not tied to any specific annotation software and encoded in a predictable and well documented manner. 
+
+Our dataset creation process is depicted in Figure \ref{fig:process1} and detailed in the following sections. Briefly, our process can be described as follows: We collected PDF files of academic articles and annotators identified and annotated software mentions and ancillary information from these documents. Annotation results were then stored as structured data using templated RDF files. Next, we iteratively refined the annotated data, cycling through alignment improvement, prototype machine learning training and evaluation, enhancing annotation consistency, and expert review and annotation curation. Through this refinement process we produced a single TEI XML file containing a corpus with inline annotations—a format we expect to be most useful to the entity recognition community. In Figure \ref{fig:process1} we show an example of the original text excerpt from its PDF source, along with the corresponding text after annotation in TEI XML format, and provenance information in the form of the manually added annotations in the RDF files used by our annotators.
+
+The dataset described in this paper, the SoftCite dataset, is distributed under a Creative Commons Attribution 4.0 International license (CC BY 4.0) and archived in Zenodo with a DOI. 
+
+\section{Creation of the dataset}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.35]{SoftciteCreationDiagram.png}
+\caption{SoftCite Dataset Creation Process}
+\label{fig:process1}
+\end{figure}
+
+\subsection{PDF collection}
+
+For annotating software mentions in academic publications, we selected open access articles from two fields: Biomedicine (from PubMed Central) and Economics. We choose these fields for the purpose of diversifying the corpus and gaining some variation across disciplines. At the beginning, we had expected to work with the XML format for aligning the manual annotation results with the original PDF text with ease. Therefore, biomedical articles were selected from the PMC Open Access collection because of their availability in XML. We downloaded the PMC collection via the PMC FTP interface \footnote{\url{https://www.ncbi.nlm.nih.gov/pmc/tools/ftp/}} and the economic articles via the Unpaywall Open Access service. 
+
+\subsection{Manual Annotation}
+
+The articles were annotated by a research team made up of a faculty member, two PhD students, and a group of masters and undergraduate research assistants. At its largest, this group included 24 annotators. To ensure quality work, in addition to training on how to identify software mentions, this process required training to use annotation tools, version control software, and workflow management tools. Annotation efforts totaled 7,024 individual annotation entries over 4,973 articles from 41 annotators over 2 years. The workload of each annotator was limited to 10 hours a week in order to avoid fatigue and keep balance in the input from annotators. Masters and undergraduate annotators were paid an hourly rate for their work. 
+
+\subsubsection{Annotation procedure and tools}
+
+In our annotation workflow, annotators logged into a server to obtain an assigned work and complete it. Annotators ran a script written by the PI to be assigned a PDF article to annotate. The script also generated an RDF file for annotators to log mentions of software found in their assigned PDF. RDF files were edited in the Atom \cite{atom} text editor.
+
+On obtaining the article, annotators first assessed whether the PDF file contained the appropriate content for annotation. Sometimes the PDF files we collected did not contain a research article, but rather a letter to the editor, an advertisement, or simply a table of contents. Annotators were instructed to decide whether the article should be annotated by observing if it had a reference list; if it did, it was considered an article of the "standard type". Additionally, some articles were not published in English and were thus not considered appropriate for annotation. Having made these initial assessments, annotators recorded their findings in the generated RDF file. 
+
+The file was structured so that annotators could "fill in the blank" as if the file were a form to be filled out for each article. To facilitate this process, "blanks" to-be-filled were made salient to annotators by presence of the word \emph{FIXME} as shown in Figure \ref{fig:fixme}. Using RDF allowed each annotation to be explicitly associated with an article. Annotators were instructed in how to create a unique ID for every annotation they made in the assigned article, replacing a \emph{FIXME} with the ID (\textit{e.g.} \emph{doiFIXME} in Figure \ref{fig:fixme} below).
+
+To indicate that an article was appropriate for inclusion in our study, annotators recorded that the article was "codable" (\textit{i.e.}, it was in English) and was a "standard" article (\textit{i.e.}, it was a research article that contains a reference section) by replacing \emph{FIXME} in the corresponding field with the boolean value \emph{TRUE}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.4]{fixme.png}
+\caption{RDF files were generated for annotators when they requested a new article to code. Generated files included the word FIXME to indicate where annotators should edit the file.}
+\label{fig:fixme}
+\end{figure}
+
+Annotators then read the full article attentively. When they encountered a possible software mention, they selected and copied the contextual text into the template, filling out a field called \emph{full\textunderscore quote}. Annotators were encouraged not to edit the formatting of the pasted text—if an unexpected line break occurred, for instance, they did not need to remove it from their \emph{full\textunderscore quote}. This quote was usually the sentence the mention was found in. Contextual text was required to ensure that the software mention being annotated would not be confused with another mention of the same software entity later in the article; thus \emph{full\textunderscore quote} was expected to be a unique selection of text from the PDF article. After filling out \emph{full\textunderscore quote} in the RDF file, annotators noted its corresponding page number within the PDF (stored in the field \emph{on\textunderscore pdf\textunderscore page}) and indicated whether the quote spans across multiple pages in the field \emph{spans\textunderscore pages}. 
+
+Initially, annotators were encouraged to redundantly identify the \emph{full\textunderscore quote} that they believed to mention software using a second tool in addition to the RDF template—Hypothes.is \cite{hypothesis}. Hypothes.is is an open source and free Chrome web browser extension for highlighting and commenting on web pages and files. Annotators were asked to read their PDF in Chrome with the Hypothes.is tool open so that they could highlight the identified \emph{full\textunderscore quote} and then later transfer them to their RDF file. However, this process sometimes proved more burdensome than useful because highlights were not always stably saved as expected and re-reading might be necessary; annotators were therefore not required to use Hypothes.is as our workflow was progressed.
+
+To allow for uncertainty and still gather data on possible (but not likely) mentions of software, annotators could record a \emph{full\textunderscore quote} and indicate that it was not software, but some other entity. Using the field \emph{mention\textunderscore type}, annotators labelled the entity as software or something else, justifying their reasoning in a free-text field \emph{memo}. Examples of non-software entities annotated include: datasets/data in databases, chemical reagents, genes, statistical techniques, and hardware/instruments. Annotators were not experts in the research fields reported on in their assigned PDF articles. Therefore, using contextual clues and searching online for information, they also assessed how likely the entity mentioned within the \emph{full\textunderscore quote} referred to a piece of software. Annotators recorded this likelihood as a \emph{certainty} score that they had identified a possible software mention, indicating this with an integer from 1 to 10. 
+
+Once a mention was identified as likely to be software, annotators made detailed annotations of the \emph{software\textunderscore name}, \emph{version\textunderscore number}, \emph{version\textunderscore date}, \emph{url}, \emph{creator}, and whether or not the software was used by the authors in the field \emph{software\textunderscore was\textunderscore used}. Unused software was often mentioned for comparison or as an analogy. 
+
+Early in our dataset creation, annotators also recorded information about any references associated with the software mention, including both in-text citations and entries in a reference list. In their RDF file, annotators recorded the \emph{creator} of the software, inferring this from statements in the text or the authors cited in a reference (depending on where the reference was found). Annotators also indicated what type of reference it was, choosing between \emph{user\textunderscore guide}, \emph{publication}, \emph{project\textunderscore page}, and \emph{project\textunderscore name}. If a \emph{URL} was given, this was also captured by annotators. As discussed below, reference annotation was problematic and is not included in the final TEI XML dataset.
+
+Periodically, annotators checked the annotation results into a GitHub repository via pull requests, which allowed an opportunity for human review. This system of version control also enabled automatic syntax checking via continuous integration implemented by Travis CI \cite{travisCI} and protected against data loss by storing annotations in the cloud.
+
+We deployed this annotation environment for four reasons: First, we did not have useful conversions of the PDF to plain text when we began, thus we chose to read and annotate the content from PDF originals rather than poorly converted text files of these articles (as detailed below). Second, conducting distributed group annotation requires a centralized data collection mechanism, and we preferred to teach the annotators Git-based collaborative workflow rather than building and maintaining a web interface. Version control is an increasingly important skill \cite{versioning} for software development and data science practice, and, while they were paid, we also sought to provide a learning opportunity for the student annotators. Third, we intended to link software mentions from the body text and in reference lists, which is difficult to accomplish using classic content analysis software such as ATLAS.ti \cite{atlasti}. Fourth, the RDF templates allow us to record annotation metadata, including annotator, time, and individual certainty level about each annotated software mention. Towards the end of this paper we reflect on these decisions and discuss trade-offs with more recently available annotation tool chains.
+
+The full annotation scheme, both as used by annotators and as published in the dataset, is included in the Appendix. The annotation scheme was adapted from \cite{howison_software_2016}, an effort to manually code 90 articles in biology to capture the visibility of software in scientific literature.
+
+\subsubsection{Annotator training and agreement calculation}
+
+The PI of this project trained a doctoral student who then developed training materials for the large annotation group. The large group was trained in waves, both on the annotation scheme and on the annotation workflow and tools. Team members had online access to the annotation scheme and step-by-step instructions for their work. This online tutorial included examples of annotated articles and hypothetical value of each field in the annotation scheme (\textit{e.g.} the \emph{creator} field had four example answers including, "If your selection is '....we used custom imaging software (Jones, 2004),' then your rdfs:label is Jones.") Training included annotating articles individually and as a group, discussing issues and edge cases. At the beginning of this project, annotation work was primarily carried out during face-to-face meetings in a classroom setting, involving extensive discussions. If an annotator had a question about the annotation scheme, the question and its answer was shared with the group so that mutual understanding could be established. If necessary, the online instructions or the annotation scheme were updated for clarity. As more shared understanding of the scheme and the annotation technology was achieved, annotators worked more remotely with less frequent discussion concentrated in emails and GitHub issues. 
+
+As annotators became more comfortable with the annotation work, we attempted to compute agreement statistics between annotators to verify the reliability of our procedure and tools. A preliminary step before agreement calculation was to aggregate annotation results from individual RDF files and align those manual results with the original text in PDF files. Only then could we identify two annotators that located the same \emph{full\textunderscore quote} and the looked-for details about the mentioned software in one article. To achieve alignment between texts from the two sources requires the plain text conversion of PDF articles. For the annotated PMC articles, we retrieved the available XML version from the PMC FTP server; we then normalized and aligned the annotated \emph{full\textunderscore quote}s from RDF inputs with the full article text from XML files. 
+
+Once the alignment was achieved, we spotted and compared the \emph{full\textunderscore quote}s with software mentions that each annotators extracted when they worked on one same article. We then calculated the percentage of \emph{full\textunderscore quote}s that have a matched \emph{full\textunderscore quote} from a second annotator within each article and averaged it out over the whole PMC article set. We obtained a percentage agreement of 65.4\%. Figure \ref{fig:agree2} demonstrates that full agreement on all the annotated \emph{full\textunderscore quote}s with software mentions has been achieved in nearly half of the double annotated PMC articles (45.7\%).  In Figure \ref{fig:agree1}, we present an example of a PDF article annotated by two annotators from our dataset. An article file named PMC3281271.pdf was annotated by annotator A and annotator B. A annotated 14 \emph{full\textunderscore quote}s in this article while B annotated 14. There are 13 \emph{full\textunderscore quote}s that A and B both annotated. Merely looking at this single article, the percentage agreement between A and B is 86.7\%.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{article-dist.png}
+    \caption{Number of articles at each percentage agreement level}
+    \label{fig:agree2}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.4]{agree_venn.png}
+    \caption{Counts of software mentions located in agreement within one article}
+    \label{fig:agree1}
+\end{figure}
+
+However, our initial agreement calculation hinged on the availability of full-length articles in plain text. In order to align annotation results with articles outside the PMC collections, we tried a range of pdf-to-text conversion tools, such as \emph{pdftools} \cite{ooms_pdftools_2017}. But we found it quite problematic to match the low-quality text conversions with the text selections annotators copied from the original PDF files. Both text inputs contain errors that lead to misalignment between them. This difficulty was further complicated by the variability of PDF documents gathered from different scholarly sources in their structures. Because the presentation of symbols, graphics, fonts, etc., in a PDF file is scripted in varied ways, the same symbol in two PDF documents may be later parsed into different character codes during conversion. Thus the pdf-to-text conversion between different PDF document structures could be inconsistent, even with the same content. 
+
+We considered that one workaround for this issue is to only annotate accessible formats of research articles, \textit{e.g.} abstracts or limited amount of full text available in XML or LaTeX for achieving easier alignment. However, we assessed that option as not sufficient to build a useful enough dataset for training supervised learning and automatic extraction of software entity from scholarly texts. For this purpose, it would be ideal if we can obtain articles in better-quality plain text formats from more academic domains. A more efficient solution for pdf-to-text conversion would generally benefit the enterprise of scholarly text mining. Thus we started to explore GROBID, an alternative solution for scholarly text conversion, and we adopted and combined it into our updated annotation tool chain. Later the choice of GROBID was proved to be effective not just for text conversion, but the construction of the whole corpus file as well.
+
+\subsection{PDF conversion to TEI XML with GROBID}
+
+GROBID (GeneRation Of Bibliographic Data) is a text mining library utilizing machine learning techniques to extract, parse, and restructure raw documents such as PDF into TEI XML encoded documents \cite{grobid:2019}. PDF is still the most widespread scientific publication format\footnote{The majority of publishing platforms still do not offer semantically structured output such as JATS (Journal Article Tag Suite), and focus on presentation-only functionalities with a final result in PDF and/or (X)HTML).}. The PDF format is presentation-oriented. It cannot contain systematic and rich annotations or other types of semantic linking to the original content. But the structured TEI XML representation explicitly marks up common structural attributes in a document such as paragraphs, section headers, formulas, figures, bibliographical references, etc., which mirrors the actual PDF content and object stream. In addition, the TEI XML format can be adapted for multidimensional and heterogeneous annotations. Such an output format allows the integration of annotations from external sources into the original documents.
+
+Relying on a mixed set of supervised learning techniques, GROBID analyzes and creates structures from raw PDF content. After processing the PDF by the pdfalto tool \cite{lopez_pdfalto_2019}, nine different sequence labelling models are applied in cascade to normalize and structure the content, and finally build a full representation of the PDF structure in TEI XML format \ref{fig:grobid1} \ref{table:structures1}. Other than producing the TEI XML output, GROBID can also display annotations on top of the source PDF, as shown in Figure \ref{fig:annotation1}, providing a visual, easy to apprehend, and contextual feedback for the annotations. 
+
+\begin{figure}[h]
+\includegraphics[scale=0.23]{grobid-02.png}
+\caption{PDF and corresponding XML TEI extraction by GROBID}
+\label{fig:grobid1}
+\end{figure} 
+
+%\begin{table}[h!]
+%\begin{center}
+% \begin{tabular}{ m{3.5cm} m{3cm} }
+% \hline
+% Structure & Accuracy (f-score)  \\
+% \hline
+% section header & 97.2 \\
+% paragraph & 92.1 \\ 
+% table reference & 86.8 \\
+% biblio. reference & 85.2 \\
+% formula & 80.4 \\
+% formula reference & 75.7 \\
+% figure reference & 72.5 \\
+% table & 71.3 \\
+% figure & 63.6 \\
+% \hline
+% \end{tabular}
+% \end{center}
+% \caption{Accuracy (f-score) of GROBID document body structures from raw PDF}
+% \label{table:structures1}
+%\end{table}
+
+\begin{table}[h!]
+\begin{center}
+ \begin{tabular}{ccl}
+ \toprule
+ Structure & Accuracy (f-score)  \\
+ \midrule
+ section header & 97.2 \\
+ paragraph & 92.1 \\ 
+ table reference & 86.8 \\
+ biblio. reference & 85.2 \\
+ formula & 80.4 \\
+ formula reference & 75.7 \\
+ figure reference & 72.5 \\
+ table & 71.3 \\
+ figure & 63.6 \\
+ \bottomrule
+ \end{tabular}
+ \end{center}
+ \caption{Accuracy (f-score) of GROBID document body structures from raw PDF}
+ \label{table:structures1}
+\end{table}
+
+\begin{figure}[h]
+\includegraphics[scale=0.35]{pdf-annotation-view.png}
+\caption{PDF with interactive annotation layout provides a visual, easy to apprehend, and contextual feedback for the annotations}
+\label{fig:annotation1}
+\end{figure}
+
+Finally an important advantage of GROBID for the general objectives of the SoftCite project is its ability to scale. Many efforts have been dedicated to the run-time, memory usage, robustness and capacity to scale with multi-threading. Because GROBID potentially needs to process millions of PDFs for many scholarly services, it is key to reduce the processing time of one document to one second below. Recently, GROBID processed 915,000 publishers' PDF per day (around 20M pages per day) with a single server with 16 CPUs. 
+
+\section{Iterative Refinement}
+
+With the manually annotated data and the usable PDF-to-text conversion from GROBID we began an iterative process of refinement. The final goal of dataset refinement was to produce consistent annotations in the TEI XML format of research articles with the understanding that this format would be the most immediately useful to the entity recognition community. During the refinement process among a small team of expert curators (including senior team members and practitioners with more expertise and experience in annotation and entity recognition), we first aligned the annotated text with the TEI XML format of full-length articles. Then, we reviewed the annotated corpus and identified problematic groups of annotations with questionable consistency. Next we revised the annotation scheme, and decided on several automated post-processing operations and manual curation of the inconsistent annotations. Meanwhile, we prototyped machine learning training using the dataset to test its usefulness for text mining purpose. After the consistency improvement phase, we have a corpus consisting of text excerpts with software mentions extracted from all the PDF articles we annotated.
+
+\subsection{Alignment Improvement}
+
+We located annotations in the TEI XML format of both biomedical and economic articles converted by GROBID from their PDF originals for producing a corpus with in-line annotations. Page numbers, copied strings of software mentions and their ancillary information (\textit{i.e.}, \emph{software\textunderscore name}, \emph{creator}, \emph{version\textunderscore number}, \emph{version\textunderscore date}, \emph{creator}), and the contextual text (\emph{full\textunderscore quote}) aggregated from the RDF inputs were utilized to match the original text in the TEI XML articles.
+
+We transformed all the manual annotation data into CSV and normalized the text from both RDF and TEI XML sources by discarding all forms of whitespace, converting all the characters to lower case, and removing all non-ASCII characters. Next, we implemented a relatively straightforward string matching algorithm with these normalized strings. All the occurrences of the normalized software mention string for a given page are then identified within the TEI XML text. For each identified mention string, we also tried to match its left and right contexts with the contextual string present in the RDF annotations (\emph{full\textunderscore quote}). If the full context could be matched, we consider that successful alignment. Finally, we matched the version, software creator, and the URL associated with the software mention in the identified contextual string.
+
+Even with the high-quality TEI XML output of GROBID, the alignment process was not effortless. Because misalignment emerged from the discrepancy between dual conversions of the PDF originals, first by annotators, second by the PDF-to-text conversion using GROBID. Annotators completed one conversion when copying all the required annotation string from the PDF document into the RDF templates. The copied text can vary and is not necessarily WYSIWYG (\textit{i.e.}, "what you see is what you get" in computing terms) due to the diverse PDF formats, operating systems, and the PDF readers/plugins used by annotators. Meanwhile the second conversion is performed by GROBID as it extracts usable text from the PDF in a consistent way. As a result, the inconsistencies between manual inputs and machine inputs include the misalignment of non-character glyphs (\textit{i.e.}, effectively in-line images in the PDF), inconsistent conversion of whitespace characters (often whitespace visible in the PDF were not included in the copied text), inconsistent non-ASCII character conversions, inconsistencies in resolved character codes (usually due to embedded fonts in original PDF files), inconsistent treatment of line and page breaks, remaining inclusion of PDF formatting artifacts (\textit{e.g.}, running headers) and different ordering of elements between PDF viewers used by annotators (\textit{e.g.}, macOS Preview and GROBID handle the ordering of PDF document elements in different ways: macOS Preview follows PDF object stream order while GROBID takes heuristics-based reading order). Human errors also engendered some alignment failure, including typos, disarranged character orders, or differing string content in the text input. For example, when the label \emph{software\textunderscore name} was filled up with the full name of software (\textit{e.g.}, "Statistical Package for Social Sciences") whereas the \emph{full\textunderscore quote} just contained an acronym (\textit{e.g.}, "SPSS").
+
+After efforts of string normalization removing whitespace, line breaks, structural mark-ups, etc., we still had 547 cases of annotated software mentions where the inconsistencies between the two sources of inputs (\textit{i.e.}, RDF inputs from annotators and TEI XML inputs converted by GROBID from PDF originals) prevented automatic alignment. We then resolved these alignment failures through inspection of the two sources of converted text, manually fixing the typo in manual annotation results, and directly copying the corresponding context string from the TEI XML source into the initial RDF input (note that originally the contextual strings were copied from the PDF sources), in a newly added \emph{tei\textunderscore full\textunderscore quote} field. Following the manual improvement of RDF inputs, we reran the same alignment script, and achieved and validated more successful string matching. Alignment edits to the RDF files do change the provenance chain, but were recorded in git version control and could thus be recovered, if needed.
+
+\subsection{Consistency review}
+
+During the alignment we observed noticeable inconsistencies across the annotations. By annotation consistency we mean whether the annotation rules were applied consistently across the annotators to articles. We identified areas where semantic or syntactic inconsistencies exist, which constricted the reliability and usefulness of the dataset. Through a series of review and manual curation, we have resolved these inconsistencies and made consequent improvements in our annotation scheme.
+
+Semantically, we reduced the inconsistencies in the view of what should be counted as software especially in our annotation context. We only included annotations of a concrete piece of software, such as a specific package, program, or a downloadable software distribution, while excluding a general mention of software. When our team was annotating research articles, there were emerging, and concurrently confusing categories of technology entities identified as "likely software" in annotations. These categories included database, algorithm, hardware, instrument, etc. To manage this we had established a field (\emph{mention\textunderscore type}) in our annotation template for noting the technology category, but found this had not been used consistently. We also defined "web platform" such as Google and GitHub as a non-software category though it is arguable since they are indeed software systems. But for our annotation context and purpose, that is, to increase the visibility of software in science, we concentrated on software entities more closely related to the scientific reputation system, simplified the decision of what was to be annotated to a binary: software versus non-software. The mentions annotated as non-software categories are excluded from our TEI XML dataset (but are available in our provenance data).
+
+In parallel, we improved the syntactic consistency of annotations at the level of each single field. For example, we removed the prefixes of \emph{version\textunderscore number} such as "ver.", "v.", or "version"; and we decided that the full and abbreviated name of the software should be annotated as a single string as \emph{software\textunderscore name}(\textit{e.g.}, "Statistical Package for Social Sciences (SPSS)"). In much of the annotation of software \emph{creator}, especially those commercial organizations usually mentioned with an address (\textit{e.g.}, "IBM Corp, Armonk, NY"), we decided to separate the geo-location away from the annotated string. These syntactic consistency improvements lessened the ambiguity of annotation data in the same field, and thus lower the chance of overfitting when the data is utilized as a training dataset.
+
+These consistency decisions were made through intensive discussion within a group of curators. The consistency improvements were subsequently implemented in the TEI XML dataset by both scripting and manual edits.
+
+\subsection{Dataset curation}
+
+While implementing these consistency improvements, we also made several curating changes to the TEI XML corpus for preparing an immediately usable dataset. We dropped the mention annotations that cannot be aligned with their PDF context even after all alignment efforts. For the software mentions that are annotated by more than one annotator, we picked the annotation generated by the most productive annotator among all those who worked on the same article. We also excluded all the manual annotations of in-text citations from our TEI XML corpus. These in-text citations associated with a software mention often refer to the software creator. Our initial intention was to link these in-text citations with their corresponding entry in the reference list of an article. But afterward we found that to annotate the in-text citation and their reference entry increased the complexity of tasks for annotators, as they performed inconsistently. Further GROBID automatically identifies all the in-text citations in PDF documents and links them to references, and those are included in the TEI XML dataset not specifically annotated as software related information. Future users of the dataset could extract and separate them if interested.
+
+After these exclusions we presented all the remaining annotations in their textual contexts as "marked up paragraphs" in the TEI XML corpus. 
+
+We then expanded the dataset by a string search using all the identified software names across all the picked paragraphs, seeking situations where a string in one context was identified as software but the same string in other contexts was not identified. Such a situation is a likely false negative for software mention. We manually reviewed all the automatically retrieved cases, also annotating the ancillary information present when they were judged to be referencing software. 
+
+In the final TEI XML corpus, the article sources and the structural elements (\textit{e.g.}, title, unique identifiers of the publication, and the discipline the article belongs to) are presented, along with the original \emph{software\textunderscore name}, \emph{software\textunderscore was\textunderscore used}, \emph{certainty}, and the version information of the software mentions. We combined the original \emph{version\textunderscore number} and \emph{version\textunderscore date} into one field \emph{version} during dataset curation, since the annotated \emph{version\textunderscore date} was disproportionately sparser than the annotated \emph{version\textunderscore number}. After the consistency improvement our expert curator evaluated the impact of keeping \emph{version\textunderscore date} independent in comparison with that of combining the two semantically closed fields on the whole corpus. The evaluation led to the final decision to merge the two fields in the TEI XML dataset. In the provenance data we still keep these two fields intact.
+
+Each annotated software mention was assigned a unique identifier (see figure\ref{fig:tei-rdf}) that allows users to trace back through provenance data (\textit{i.e.}, the original RDF input). We also marked up the annotations that were later modified during our consistency improvement and curation, attaching an anonymized identifier of the correspondent expert curator who made that change. The unchanged annotations are labelled with their initial annotator using anonymized unique identifier in an analogous manner.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{tei-to-rdf.png}
+    \caption{Each software mention in the TEI XML corpus has a unique identifier "xml:id" which links the annotation back to the provenance data in RDF format}
+    \label{fig:tei-rdf}
+\end{figure}
+
+We changed the label \emph{software\textunderscore name} to \emph{software} since there exist non-named software entities annotated in our dataset. Finally, we changed the label \emph{creator} to \emph{publisher} as most of the software creators annotated in the dataset are in effect publishers of the software mentioned. We made these two changes to make the whole corpus and the annotation scheme more semantically coherent.
+
+\subsection{Reliability and usefulness of SoftCite dataset}
+
+To verify the reliability of our annotation scheme, procedure, and operations, we recalculated the inter-annotator agreement per entity annotated in all the annotated articles (including both PMC and economic articles) after we achieved successful alignment between manual annotation from RDF inputs and original article text with GROBID. The entities annotated of interest are \emph{software\textunderscore name}, \emph{version\textunderscore date}, \emph{version\textunderscore number}, \emph{creator}, and \emph{url} in initial RDF annotations. Note that typos in RDF annotation data were manually fixed earlier during alignment improvement, since the mechanic discrepancy between annotations due to typo does not constitute the disagreement of judgment between annotators about whether a software entity is mentioned. In other words, two annotators successfully identified the same entity as software but typos in annotation texts deflate the agreement. Because agreement scripts do not count them as in agreement owing to the failure of strict string matching. Hence, it is more valid to calculate agreement using typo-fixed data. Given the fact that software mentions are sparse over long research articles, the chance of random agreement is low when locating software mentions and identifying their associated details. So we judge that the adjustments of chance agreement in measures such as Cohen's kappa and Krippendorf's alpha are not needed.
+
+Typo fixing does not solely allow us to improve alignment, but also enables us to calculate more granular inter-annotator agreement in each annotation field. As of the release of our TEI XML corpus, among 260 PMC articles that are annotated by more than one annotator, a percentage agreement of 70.7\% is achieved in the field of \emph{software\textunderscore name}. \emph{Version\textunderscore number} has the highest agreement of 80.8\%, in contrast are an agreement of 42.7\% in the field of \emph{version\textunderscore date} and an agreement of 42.2\% in \emph{creator}; the field \emph{url} has an agreement of 66.8\%. Among all these fields, the inter-annotator agreement is 61.9\%.
+
+Meanwhile, in the economic article set, thus far we have 26 articles that are annotated by more than one annotator. Despite the relatively small number of annotated articles, we have not spotted agreement level that is drastically different from that in the PMC article set. The overall agreement counting in all the fields is 66.3\%. The agreement in the \emph{software\textunderscore name} field is 72.1\%. \emph{Version\textunderscore number} still has the highest agreement of 76.7\%; while \emph{version\textunderscore date} has the least agreement of 43.4\%. The agreement is 59.2\% in the field of \emph{creator} and 71.3\% in the field of \emph{url}. In Table ?? we present the number of annotations and the corresponding agreement achieved by field in these two article sets.
+
+%\begin{table}
+%\begin{center}
+% \begin{tabular}{  m{3cm}  m{2cm} m{2cm}  m{2cm}  } 
+% \hline
+% Labels & Precison & Recall & f-score  \\ [0.5ex] 
+% \hline
+% \emph{software} & 86.5 & 72.24 & 78.67 \\ 
+% \emph{publisher} & 85.45 & 74.84 & 79.72 \\
+% \emph{version} & 89.65 & 84.99 & 87.14 \\
+% \emph{url} & 69.19 & 63.35 & 65.03 \\
+% micro-average & 82.7 & 73.85 & 77.64 \\ [1ex] 
+% \hline
+%\end{tabular}
+%\end{center}
+%\label{table:result2}
+%\caption{Recent Results for prototype machine learning training and evaluation by using a linear CRF approach}
+%\end{table}
+
+\begin{table}[h!]
+\begin{center}
+ \begin{tabular}{cccl} 
+ \toprule
+ Labels & Precison & Recall & f-score  \\ 
+ \midrule
+ \emph{software} & 86.5 & 72.24 & 78.67 \\ 
+ \emph{publisher} & 85.45 & 74.84 & 79.72 \\
+ \emph{version} & 89.65 & 84.99 & 87.14 \\
+ \emph{url} & 69.19 & 63.35 & 65.03 \\
+ micro-average & 82.7 & 73.85 & 77.64 \\
+ \bottomrule
+\end{tabular}
+\end{center}
+\label{table:result2}
+\caption{Recent Results for prototype machine learning training and evaluation by using a linear CRF approach}
+\end{table}
+
+While the inter-annotator agreement speaks for the reliability of our annotation guidelines, procedures and operations, we demonstrate the usefulness of the TEI XML corpus for immediate use by utilizing it to prototype machine learning training. We implemented a basic linear CRF (Conditional Random Field) model \cite{lafferty_conditional_2001} for training prototyping, since CRF is a typical choice in machine-learned named-entity recognition (NER) tasks that communities of text mining research are familiar with.
+
+We report traditional precision, recall, and f-score of the CRF model performance. We divided the TEI XML corpus randomly with 90\% of the corpus for training and the rest 10\% for evaluation. All the performance measures were averaged with 10-fold cross-validation with the 90/10 segmentation of the whole corpus. Among all the fields, we have achieved a precision of .83, recall of .74, and f-score of .78. The performance metrics of each annotation label are detailed in table \ref{table:result2}. To our knowledge, the most similar effort recently to ours achieved a f-score of .74 with a precision of .63, leveraging a CRF model \cite{duck_2015}. 
+
+
+\subsection{Summary of the findings}
+
+The published Softcite dataset in TEI XML format includes 2,317 paragraphs from 1,247 research articles with 6,695 annotated entities in total. ??? paragraphs do not contain annotations, thus they can serve as negative training data for supervised learning. Among all these annotated entities, 4,131 are software mentions, representing 1,506 distinct pieces of software. Below \ref{table:top10} are the top 10 software that are mentioned the most frequently in Softcite dataset. 1,259 software mentions (30.5\%) come along with its version, be it version date or version number; 1,115 software are mentioned with its publisher (27.0\%); and 171 software are mentioned with its url (4.1\%). Only 11 software mentions (0.2\%) come along with full information about its publisher, version, and url. Among the 10 most mentioned software (mentioned 842 times in Softcite dataset), 59.1\% are mentioned with version, 42.2\% are mentioned with publisher, and 0.2\% are mentioned with url.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{ccl}
+\toprule
+     Software      & Number of annotations \\
+     \midrule
+    SPSS           & 315                   \\
+    SAS            & 94                    \\
+    ImageJ         & 73                    \\
+    Stata          & 67                    \\
+    R              & 54                    \\
+    Mobyle         & 51                    \\
+    MATLAB         & 49                    \\
+    STATA          & 49                    \\
+    MUMMALS        & 47                    \\
+    GraphPad Prism & 43                    \\
+    \bottomrule
+\end{tabular}
+\end{center}
+\label{table:top10}
+\caption{Software mentioned the most often in Softcite dataset}
+\end{table}
+
+Overall, 37 trained annotators individually annotated between 1 and 939 entities. Of the 6,695 annotations, 1,217 (18.2\%) were corrected by expert reviewers during the iterative refinement process. On average, there are 5.5 annotated entities and 
+3.4 software mentions in each article. The number of annotated entities per article range from 1 to 144; while the number of software mentions per article peaked at 137. In Figure \ref{fig:compare1} we can see how the density of annotations are distributed across articles: for instance, 97.6\% of the articles (1,188 articles) presented in the TEI XML dataset contain no more than 20 software mentions, while 2 of these articles have more than 100 software mentions.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.5]{article-over-annotation.png}
+    \caption{Distribution of article counts over annotation counts per article}
+    \label{fig:compare1}
+\end{figure}
+
+In this paper we detailed the process of creating a human annotated dataset for scholarly text mining purposes, with the hope of making software in research more visible and accessible. Just like understanding what software has been used in the conduct of research helps researchers to better grasp the research process, we deem it helpful that we disclose the processual knowledge during the course of our dataset creation for scholars working in the similar direction. Many challenges that we have tackled, such as text conversion of PDF documents, and how to manage the tools and procedures of human annotation at such a scale, are not peculiar but longstanding, stumbling blocks that wait for the state-of-the-art in the field to overcome. Thus, to reveal our attempts and achievements could benefit the subsequent efforts in text mining and corpus construction by informing their methodological orientation.
+
+    - Counts of software mentions, league tables (what is the most mentioned software overall?) 
     - Distribution of Software mentions
         - per page, per article etc.
+        - How many paragraphs 
     - Window analysis
         - How much could we cut down the content analysis work?
         - How well should whitelists work?
 
-# Future work
-    - Use in neural network machine learning
-    - Continued addition through Crowdsourcing
-    - Use in CiteAs tool
+
+
+\section{Future work}
+
+Our future work will focus on using this dataset to train machine learning algorithms so that the visibility of software in science may be improved. By creating a database of software mentions in across a large set of open access PDFs, and making those available through the tool CiteAs \cite{citeas}, we hope to contribute to the study of scientific software and its valuation. Finally, we are continuing to expand the SoftCite Dataset in two ways: through paid crowdsourcing, and through building a community to further software mention annotation.
+
+- Use in neural network machine learning (refer to companion paper which reports results of machine learning using different algorithms and their computational trade offs.).
     
-\end{markdown}
+One use of this dataset is to provide a database of software mentions for a tool called CiteAs \cite{citeas}. CiteAs seeks to improve the visibility of software work in science by improving software citation. In particular CiteAs seeks to gather citation requests (the way a creator of software would like to be cited) and make them easily available to users of software, as well as editors and reviewers. Software citation is, in part, difficult because unlike a paper, simply having the software in hand does not communicate how that software should be cited. CiteAs addresses this by taking a query and spidering the web seeking requests for citation. Currently requests for citation searched include free text requests in README and CITATION files in repositories, certain conventional pages on project webpages (\textit{e.g.}, citing.html), as well as rare but effective machine readable requests for citation (\textit{e.g.}, CITATION.ccf, CodeMeta files, and language specific methods such as the DESCRIPTION file for R packages). The softcite dataset allows us to train a system to recognize how software is actually cited in publications, run it over a large collection of PDFs, then present those results. We intend to incorporate those into CiteAs suggestions. We hope that CiteAs will then prompt clearer requests and coalesce the use of specific citations. Finally, we intend to use this database of mentions to develop a Software Impact Story, providing a resource for those contributing software in science to make an argument for their impact.
+
+Finally, we are continuing to expand the Softcite Dataset in two ways: through paid crowdsourcing, and through building a community to further software mention annotation. First, we are learning from the issues described above and working with a crowdsourcing-based data labeling infrastructure called TagWorks, which will provide a simpler interface and allow scaling to the crowd. We are able to use the gold standard dataset described in this publication to evaluation different approaches. For example we will be able to compare the precision and recall of crowds, compared to student annotators in this domain. We will also be able to compare techniques to reduce annotation effort described above, such as trying heuristics to select mention-rich parts of papers. Finally the crowd effort will allow us to build a larger dataset, across more domains (\textit{e.g.}, Astronomy). Second, we are attempting to build a community of software mention annotators. We have reached out to  other groups with labelled software datasets and are seeking to convert those to forms that are comparable and useful together with the Softcite Dataset. We are also publishing our annotation scheme and describing our infrastructural experiences to provide paths for others seeking to annotation software mentions.
+
+In conclusion, we present a manually annotated dataset of software mentions in full-text publications, and we encourage the academic community to both make use of this dataset for training machine learning systems, as well as providing critique and working together with us to expand the dataset over time. The project continues at \url{http://github.com/howisonlab/softcite-dataset}.
+
+\section{Appendix}
+
+\subsection{Annotation Scheme}
+
+
+\begin{longtable}[c]{|p{4cm}|p{5cm}|p{3cm}|}
+\hline 
+Code & How to Apply & Example \\ \hline
+codable & Applies to article. Enter true if the article is codable. For example, if the article is in a foreign language and does not have an English translation then it would be uncodable and you would enter false. If you reply false, delete the rest of the codes in the article block and move on to a new article. &  
+\\ \hline
+standard\_type & Reply true if the article appears to be a normal research article (literature review, experiment, qualitative study, etc.). An abstract or reference list is usually indicative of the file being a standard research article. Enter false for other content like letters to the editor, post-mortems, book reviews, committee or workshop reports, abstract collections, etc. Continue coding regardless of whether or not the article is standard. &  \\ 
+\hline
+memo & Use this space to record any interesting issues that come up in the paper. Put the memo in triple quotes. You can insert a memo anywhere you need by using the memo snippet. &  \\ 
+\hline
+has\_in\_text\_mention & Applies to article. This code is applied to each in text mention of software. Use this code multiple times, once for each mention. Name the mention so that it is the article title followed by an underscore, then your initials, then a number. Start that number at 01 and increment one each time you find a new mention. Doesn't have to match the order the mentions are in the PDF. Do not use this code if there were no software mentions (use coded\_no\_in\_text\_mentions instead). If you find a mention in a footnote, code the footnote as one mention and the sentence the footnote linked to as another. & - Your first mention, if your initials are AB and the article title is pmcid:2002-22-AM\_J\_BOT would read pmcid:2002-22-AM\_J\_BOT\_AB01 - Your fourth mention would read pmcid:2002-22-AM\_J\_BOT\_AB04 \\ \hline
+coded\_no\_in\_text\_mentions & Applies to article. This code is used if the article made no mention of software. Reply true if there was no mention of software in the article. Reply false if there was a mention (\textit{i.e.}, it's false if you have responses for has\_in\_text\_mention above). &  \\ 
+\hline
+full\_quote & Applies to both in text mentions and references. This code is a quotation taken directly from the article that provides the content that mentions the software (\textit{i.e.} the full quote is the selection you will code). Highlight this quote in your pdf. Copy and paste directly from the pdf to this code; there is no need to remove hyphens from line breaks. Your selection needs to be long enough to make it easy to identify which sentence you are referring to. Do not change the indentation of your quote. Use triple quotes around the quote. & - We used Detrended Corre-spondence Analysis in PC-ORD (McCune, 1993) to depict multivariatechanges in dominance of species neighborhoods for each focal speciesin recently burned and long-unburned sites. \\ 
+\hline
+on\_pdf\_page & Applies to both in text mentions and references. This code provides the page of the pdf that your selection (\textit{i.e.}, full quote) can be found on. This refers specifically to the pdf page, not the journal page. If selection spans pages put the first page here and set citec:spans\_pages to true. & - 5 \\ 
+\hline
+spans\_pages & Applies to both in text mentions and references. This code indicates whether or not the quote starts on one page but continues to a secont page. If the in text mention or reference starts and stops on different PDF pages, enter true. If it is only on one page, enter false. &  \\ 
+\hline
+mention\_type & Applies to in-text mentions. This code applies to the selection and describes if the mention is software or something else and then establishes how certain you are about this. If you are unsure if a mention of some sort of technology is software, do a web search around that mention. Or read more in the context paper. \newline
+- Use "software" if the mention is software. \newline
+- Use "algorithm" if the mention is referring to an algorithm, a computerized problem-solving process, or a function. \newline
+- Use "hardware" if the mention is referring to a piece of hardware or a physical instrument (that may or may not have software installed on it). \newline
+- Use "database" if the mention is referring to an actual data collection/dataset (\textit{i.e.}, the real data). In some cases the data is "wrapped" in software components such as an interface. Make sure what the mention refers to is the data inside the database or a functioning database supported by a software framework. \newline
+- Use "web platform" if the mention is referring to an online platform with a web interface. This category could include web services such as "Google", "Amazon", or "Sportify". But exception exists. \newline
+- Use "other" if the mention is none of the above. Indicate your certainty on a scale of 1-10, where 10 is the most certain about your categorization. Leave a memo explaining how you made your decision about what category it is. If you do not categorize the mention as software (\textit{e.g.}, it is hardware), then you can stop coding the in text selection after this code and delete all other codes that follow. & \\
+\hline
+software\_was\_used & Applies to in text mentions. This code applies to the selection and describes whether or not the authors actually made use of or developed the software being mentioned. Reply true if the authors used or developed this software and false if they only considered using the software or simply mentioned its existence. &  \\
+\hline
+software\_name & Applies to both in text mentions and references. This code describes the name of the software as the authors refer to it in the selection. Reply true if there was a specific name provided, then enter the name in the label. Reply false if the name of the software was never provided (\textit{e.g.} if they only mention the creator or the purpose of the software). Do not include the version number in the label. Delete the label line if no software name is provided in the in text mention. If the software is mentioned both by name and by abbreviation in the same excerpt, it should be coded as two separate mentions that differ in software\_name only in-text\_mention name only. & - PC-ORD \newline
+- Staden \newline
+- GDE \\ 
+\hline
+version\_number & Applies to both in text mentions and references. This code provides the version number as described in the selection. Reply true if a version is provided. Reply false if there is no way to distinguish the version. In label, provide the version number. If there is a "v" or the word "version" before the number in the article, include that in your label. Dates do not count as version numbers-use version date instead. Delete the label line if no version number is provided in the in text mention. & - v34 \newline - beta 0.3 \newline - version 2.0 \newline - 1.3.9 \\ 
+\hline
+version\_date & Applies to both in text mentions and references. This code provides a date used to indicate a version of the software. If you are coding an in-text mention, enter true if a date is provided that tells you when the software itself was created. When coding an in-text mention, this is is not the date of a cited paper's publication. That means that if the only date in the in-text mention is part of a citation (\textit{e.g.} "(Jones, 2004)"), then you will enter false. If you are coding a reference and the reference includes a date of any kind, enter true. Enter false if no date is provided. If there is a date, enter that as the label. Use the date as provided in the paper (\textit{e.g.} 2/3/2001), don't change the format. Delete the label line if no date is provided in the in text mention. & - May 2012 \newline - 2004-02-11  \\
+\hline
+url & Applies to both in text mentions and references. This code provides a URL if the selection includes one. Mark as true if there is a URL provided. Mark as false if no URL was provided. Copy and paste the URL and enter it into the label. If the URL is found in a footnote without any other text, consider the URL to be part of the selection that has the footnote. If, however, the footnote includes more text than just the URL, it becomes its own mention. Delete the label line if no URL is provided in the in text mention. If the URL is embedded, meaning that you see text that is a hyperlink but not the actual URL, mark this code as false. & - http://timat2.\newline sourceforge.net \\
+\hline
+creator & Applies to both in text mentions and references. This code provides the creator of the software as described in the in text mention or the reference, depending on which you are coding. Enter true if a creator is named. Enter false if no creator is provided. Copy the creator as named in the in text mention or reference and paste it as the label. If multiple creators are named, select them all and enter them into the label. If this is an in-text selection, the creator would be whoever that text indicates the software creator to be, including from an "Author-Year" style citation. If this is a reference selection, the creator is the list of authors, including 'et al.' if relevant.  \newline It is ok to have a creator on the in-text\_mention and on the associated reference. Delete the label line if no creator is provided in the in text mention. & - If your selection is, 'Software, written by xyz, was used for ...,' then your rdfs:label is xyz. \newline - If your selection is '....coupled to MetaMorph imaging software (Universal Imaging Corporation, Downingtown, PA),' your rdfs:label is Universal Imaging Corporation. \newline - If your selection is '....we used custom imaging software (Jones, 2004),' then your rdfs:label is Jones. \newline - If your selection is 'MCCUNE, B. 1993. Multivariate analysis on the PC-ORD system. Oregon State University, Corvallis, Oregon. USA,' then your rdfs:label is MCCUNE, B. \\ 
+\hline
+has\_reference & Applies to in text mentions. This code names the reference that an in text selection cites, if it cites one. It should be named the same thing that the reference is referred to as in its own reference block below. It should start with the article name (\textit{e.g.} 002-22-AM\_J\_BOT), followed by an underscore and then enough information to make it a unique name. Using the first author on the reference followed by the date is a good way to ensure uniqueness, but it is possible you will need to append the character a or the character b after the date if there are multiple references by the same author in the same year. If there are no references, delete this code altogether. & - pmcid-cited:\newline
+2002-22-AM\_J\_BOT\_Staden-1996 \newline - pmcid-cited:\newline
+2002-22-AM\_J\_BOT\_Staden-1996b \\ 
+\hline
+reference\_type & This code is only applied to reference selections. It is used to categorize the type of reference that it is. Each option is mutually exclusive. \newline - Apply "publication" if the reference is to a formal publication of some sort. \newline - Apply "user\_guide" if the reference is to a user guide for the software. \newline - Apply "project\_page" if the reference is just pointing to the software's online website. \newline - Apply "project\_name" if the reference is informal and mentions the name of the software but provides no URL (see examples).
+& - If your reference selection is 'STADEN, R. 1996. The staden sequence analysis package. Molecular Biotechnology 5:233–241,' then you would code that as a publication because it is an article in the journal Molecular Biotechnology.  \newline - If your reference selection is 'MCCUNE, B. 1993. Multivariate analysis on the PC-ORD system. Oregon State University, Corvallis, Oregon. USA,' then you would code that as project\_name because it is neither a publication, nor a user guide, nor does it link to the project's webpage. It only names the project as an entity that exists. \\ 
+\hline
+\end{longtable}
+
+\verbatiminput{}
 
 %Basic chunk example
 %-------------------------------------------------------------------------------------
@@ -71,4 +469,13 @@ summary(X)
 @
 %--------------------------------------------------------------------------------
 
+\bibliographystyle{plain}
+\bibliography{biblio,references-zotero}
+
+
+
+
+%\end{markdown}
 \end{document}
+
+
